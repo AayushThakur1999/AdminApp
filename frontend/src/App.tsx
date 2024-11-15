@@ -1,9 +1,19 @@
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Login, EmployeeForm } from "./Pages";
+import { employeeFormAction } from "./Utils/Actions";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <EmployeeForm />,
+    action: employeeFormAction,
+  },
+]);
+
 export default function App() {
-  return (
-    <>
-      <h1 className="text-3xl font-bold underline text-center mt-16">
-        Hello world!
-      </h1>
-    </>
-  );
+  return <RouterProvider router={router} />;
 }

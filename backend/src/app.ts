@@ -22,7 +22,9 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 // routes import
+import employeeRouter from "./routes/employee.routes";
 
 // routes declaration
+app.use("/api/v1/employees", employeeRouter);
 
 export { app };
