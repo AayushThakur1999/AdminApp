@@ -12,3 +12,30 @@ export type FormGroupProps = {
   label: string;
   defaultChecked?: boolean;
 };
+
+export type EmployeeData = {
+  _id: string;
+  name: string;
+  email: string;
+  gender: string;
+  phoneNumber: string;
+  designation: string;
+  avatar: string;
+  courses: Array<string>;
+  createdAt: string;
+};
+
+export interface EditEmployeeModalProps {
+  employee: EmployeeData;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedEmployee: EmployeeData) => void;
+}
+
+
+export interface DeleteEmployeeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  employeeName: string;
+}

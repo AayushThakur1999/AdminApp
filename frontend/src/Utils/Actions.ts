@@ -1,4 +1,5 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import { redirect } from "react-router-dom";
 import { toast } from "react-toastify";
 
 export const employeeFormAction = async ({ request }: { request: Request }) => {
@@ -14,5 +15,32 @@ export const employeeFormAction = async ({ request }: { request: Request }) => {
   } catch (error) {
     console.log(error);
     throw new Error("Something went wrong while adding employee");
+  }
+};
+
+export const loginAction = async ({ request }: { request: Request }) => {
+  const formData = await request.formData();
+  const data = Object.fromEntries(formData);
+  try {
+    const response = await axios.post("/admins/login-admin", data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("response", response);
+    toast(response.data?.message || "You have logged-in successfully :)");
+
+    return redirect("/register");
+  } catch (error) {
+    console.error("Error::", error);
+    if (error instanceof AxiosError) {
+      if (error.status === 401) {
+        toast.error("Incorrect credentials!");
+        throw new Error(error.message);
+      }
+    } else if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error("Something went wrong while registering the user");
   }
 };

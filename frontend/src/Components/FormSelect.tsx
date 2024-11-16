@@ -8,8 +8,12 @@ const FormSelect = ({
   options: string[];
 }) => (
   <div className="my-2">
-    <select className="select select-primary w-full max-w-xs" name={name}>
-      <option disabled selected>
+    <select
+      className="select select-primary w-full max-w-xs"
+      name={name}
+      defaultValue=""
+    >
+      <option disabled value="">
         {label}
       </option>
       {options.map((option) => (

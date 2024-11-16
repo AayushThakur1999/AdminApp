@@ -23,8 +23,10 @@ app.use(cookieParser());
 
 // routes import
 import employeeRouter from "./routes/employee.routes";
+import adminRouter from "./routes/admin.routes";
 
 // routes declaration
 app.use("/api/v1/employees", employeeRouter);
+app.use("/api/v1/admins", adminRouter);
 
 export { app };

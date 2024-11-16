@@ -3,33 +3,37 @@ import { AdminModel, IAdmin, IAdminMethods } from "../types";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const adminSchema = new Schema<IAdmin, AdminModel, IAdminMethods>({
-  fullname: {
-    type: String,
-    required: true,
-    trim: true,
+const adminSchema = new Schema<IAdmin, AdminModel, IAdminMethods>(
+  {
+    fullname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    refreshToken: {
+      type: String,
+    },
   },
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  refreshToken: {
-    type: String,
-  },
-});
+  { timestamps: true }
+);
 
 // encrypts the password just before saving/changing it
 adminSchema.pre<IAdmin>("save", async function (next) {

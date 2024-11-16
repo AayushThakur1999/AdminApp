@@ -27,7 +27,7 @@ export type AdminModel = Model<IAdmin, {}, IAdminMethods>;
 export interface IEmployee extends Document<Types.ObjectId> {
   name: string;
   email: string;
-  phoneNumber: number;
+  phoneNumber: string;
   designation: string;
   gender: string;
   courses: Array<string>;
@@ -42,4 +42,11 @@ export interface TokensJwtPayload extends JwtPayload {
   email?: string;
   username?: string;
   fullname?: string;
+}
+
+export interface LoginRequestBody {
+  username?: string;
+  email?: string;
+  password: string;
+  isAdmin?: boolean;
 }
