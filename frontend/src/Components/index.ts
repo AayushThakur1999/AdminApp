@@ -5,3 +5,4 @@ export { default as FormCheckBoxGroup } from "./FormCheckBoxGroup";
 export { default as FormSelect } from "./FormSelect";
 export { default as DeleteEmployeeModal } from "./Modals/DeleteEmployeeModal";
 export { default as EditEmployeeModal } from "./Modals/EditEmployeeModal";
+export { default as Navbar } from "./Navbar";

@@ -18,7 +18,7 @@ export type EmployeeData = {
   name: string;
   email: string;
   gender: string;
-  phoneNumber: string;
+  phoneNumber: number;
   designation: string;
   avatar: string;
   courses: Array<string>;
@@ -29,9 +29,8 @@ export interface EditEmployeeModalProps {
   employee: EmployeeData;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedEmployee: EmployeeData) => void;
+  onSave: (updatedEmployee: EmployeeData, file: File | null) => void;
 }
-
 
 export interface DeleteEmployeeModalProps {
   isOpen: boolean;

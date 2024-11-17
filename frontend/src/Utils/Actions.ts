@@ -30,7 +30,9 @@ export const loginAction = async ({ request }: { request: Request }) => {
     console.log("response", response);
     toast(response.data?.message || "You have logged-in successfully :)");
 
-    return redirect("/register");
+    const name = response.data.data.user.fullname;
+    localStorage.setItem("adminName", name || "admin");
+    return redirect("/n/home");
   } catch (error) {
     console.error("Error::", error);
     if (error instanceof AxiosError) {

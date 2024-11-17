@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useRevalidator } from "react-router-dom";
 import { EmployeeData } from "../Types";
 import { DeleteEmployeeModal, EditEmployeeModal } from "../Components";
+import axios, { AxiosError } from "axios";
+import { toast } from "react-toastify";
 
 const EmployeesTable = () => {
   const employeeData = useLoaderData() as Array<EmployeeData>;
@@ -21,17 +23,127 @@ const EmployeesTable = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleSaveEdit = (updatedEmployee: EmployeeData) => {
+  const revalidator = useRevalidator();
+
+  const handleSaveEdit = async (
+    updatedEmployee: EmployeeData,
+    file: File | null
+  ) => {
     // Implement your save logic here
-    console.log("Saving updated employee:", updatedEmployee);
-    setIsEditModalOpen(false);
+    // console.log("Saving updated employee:", updatedEmployee);
+    if (!selectedEmployee) return;
+
+    // Find the original employee data
+    const originalEmployee = employeeData.find(
+      (emp) => emp._id === selectedEmployee._id
+    );
+
+    if (!originalEmployee) return;
+
+    // Create a FormData instance to handle file upload
+    const formData = new FormData();
+
+    // Add the file if it exists
+    if (file) {
+      formData.append("avatar", file);
+      console.log(
+        "formdata till avatar inserton:",
+        Object.fromEntries(formData)
+      );
+    }
+
+    // Create updated fields object as before
+    const updatedFields: Record<string, string | number | string[]> = {};
+    type EmployeeKey = keyof EmployeeData;
+
+    (Object.keys(updatedEmployee) as EmployeeKey[]).forEach(
+      (key: EmployeeKey) => {
+        if (key !== "_id" && key !== "createdAt" && key !== "avatar") {
+          if (key === "courses") {
+            if (
+              updatedEmployee.courses.toString() !==
+              originalEmployee.courses.toString()
+            ) {
+              updatedFields.courses = updatedEmployee.courses;
+            }
+          } else if (key === "phoneNumber") {
+            if (updatedEmployee.phoneNumber !== originalEmployee.phoneNumber) {
+              updatedFields.phoneNumber = updatedEmployee.phoneNumber;
+            }
+          } else if (updatedEmployee[key] !== originalEmployee[key]) {
+            updatedFields[key] = updatedEmployee[key];
+          }
+        }
+      }
+    );
+
+    // Add updated fields to FormData
+    Object.entries(updatedFields).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          formData.append(key, item as string);
+        });
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Add the ID
+    formData.append("_id", updatedEmployee._id);
+
+    if (Object.keys(updatedFields).length === 1 && !file) {
+      toast.info("No changes detected.");
+      setIsEditModalOpen(false);
+      return;
+    }
+
+    try {
+      // Send the PATCH request with FormData
+      const response = await axios.patch(
+        "/employees/updateEmployeeDetails",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      revalidator.revalidate(); // Manually re-run the loader
+      
+      toast.success(`Employee ${selectedEmployee.name} updated successfully!`);
+      console.log("Updated employee:", response.data);
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      toast.error("Failed to update employee.");
+    } finally {
+      setIsEditModalOpen(false);
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedEmployee) {
       // Implement your delete logic here
-      console.log("Deleting employee:", selectedEmployee._id);
-      setIsDeleteModalOpen(false);
+      // console.log("Deleting employee:", selectedEmployee._id);
+      try {
+        const response = await axios.delete(
+          `/employees/deleteEmployee/${selectedEmployee._id}`
+        );
+        console.log(response);
+        revalidator.revalidate(); // Manually re-run the loader
+        toast.success(
+          `Employee ${selectedEmployee.name} deleted successfully!`
+        );
+      } catch (error) {
+        console.error("Error::", error);
+        if (error instanceof AxiosError) {
+          throw new Error(error.message);
+        }
+        throw new Error(
+          "Something went wrong while trying to delete the employee"
+        );
+      } finally {
+        setIsDeleteModalOpen(false);
+      }
     }
   };
 
@@ -94,7 +206,7 @@ const EmployeesTable = () => {
                   <td className="text-sm">{email}</td>
                   <td className="text-sm font-mono">{phoneNumber}</td>
                   <td className="capitalize text-sm">
-                    <span className="badge badge-ghost">{designation}</span>
+                    <span className="font-mono text-base">{designation}</span>
                   </td>
                   <td className="capitalize text-sm">
                     <span className="badge badge-primary badge-outline">

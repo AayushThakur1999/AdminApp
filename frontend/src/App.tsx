@@ -1,26 +1,41 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { Login, EmployeeForm } from "./Pages";
+import {
+  Login,
+  EmployeeForm,
+  WelcomePage,
+  EmployeesTable,
+  Error,
+} from "./Pages";
 import { employeeFormAction, loginAction } from "./Utils/Actions";
-import EmployeesTable from "./Pages/EmployeesTable";
 import { employeesTableLoader } from "./Utils/Loaders";
-import Error from "./Pages/Error";
+import { Navbar } from "./Components";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/n",
+    element: <Navbar />,
+    children: [
+      {
+        path: "register",
+        element: <EmployeeForm />,
+        action: employeeFormAction,
+      },
+      {
+        path: "home",
+        element: <WelcomePage />,
+      },
+      {
+        path: "tableOfEmployees",
+        element: <EmployeesTable />,
+        errorElement: <Error />,
+        loader: employeesTableLoader,
+      },
+    ],
+  },
+  {
+    path: "/login",
     element: <Login />,
     action: loginAction,
-  },
-  {
-    path: "/register",
-    element: <EmployeeForm />,
-    action: employeeFormAction,
-  },
-  {
-    path: "/tableOfEmployees",
-    element: <EmployeesTable />,
-    errorElement: <Error />,
-    loader: employeesTableLoader,
   },
 ]);
 

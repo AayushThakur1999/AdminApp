@@ -1,6 +1,8 @@
+import { isValidObjectId } from "mongoose";
 import { Employee } from "../models/employee.model";
 import { ApiError, ApiResponse, AsyncHandler } from "../utils";
 import { uploadOnCloudinary } from "../utils/Cloudinary";
+import { UpdateEmployeeRequest } from "../types";
 
 export const addEmployee = AsyncHandler(async (req, res) => {
   const { name, email, phoneNumber, designation, gender, courses } = req.body;
@@ -79,25 +81,32 @@ export const getAllEmployees = AsyncHandler(async (req, res) => {
 });
 
 export const updateEmployeeDetails = AsyncHandler(async (req, res) => {
-  const { name, email, phoneNumber, designation, gender, courses, _id } =
-    req.body;
-  if (
-    [name, email, phoneNumber, designation, gender, courses].some(
-      (field) =>
-        field == null || (typeof field === "string" && field.trim() === "")
-    )
-  ) {
-    throw new ApiError(400, "All fields are required");
+  const updateData: UpdateEmployeeRequest = req.body;
+  console.log("UPDATEDATA:", updateData);
+
+  if (!updateData._id || !isValidObjectId(updateData._id)) {
+    throw new ApiError(400, "Invalid Employee ID");
   }
 
-  const updateData: Record<string, string | number> = {
-    name,
-    email,
-    phoneNumber,
-    designation,
-    gender,
-    courses,
-  };
+  // Remove _id from update data as we don't want to update it
+  const { _id, ...updateFields } = updateData;
+
+  const existingEmployee = await Employee.findById(_id);
+  if (!existingEmployee) {
+    throw new ApiError(404, "Employee not found");
+  }
+
+  // If email is being updated, check if it's already in use by another employee
+  if (updateFields.email) {
+    const emailExists = await Employee.findOne({
+      email: updateFields.email,
+      _id: { $ne: _id },
+    });
+
+    if (emailExists) {
+      throw new ApiError(400, "Email already in use by another employee");
+    }
+  }
 
   const avatarLocalPath = req.file?.path;
   if (avatarLocalPath) {
@@ -109,12 +118,12 @@ export const updateEmployeeDetails = AsyncHandler(async (req, res) => {
         "Something went wrong while uploading profile image"
       );
     }
-    updateData.avatar = avatar.url;
+    updateFields.avatar = avatar.url;
   }
 
   const updatedEmployee = await Employee.findByIdAndUpdate(
     _id,
-    { $set: updateData },
+    { $set: updateFields },
     { new: true, runValidators: true }
   );
 
@@ -122,9 +131,31 @@ export const updateEmployeeDetails = AsyncHandler(async (req, res) => {
     throw new ApiError(404, "Employee not found");
   }
 
+  // console.log("updateFields:", updateFields);
+
   return res
     .status(200)
     .json(
-      new ApiResponse(200, updateData, "Updated Employee details successfully!")
+      new ApiResponse(
+        200,
+        updatedEmployee,
+        "Updated Employee details successfully!"
+      )
     );
+});
+
+export const deleteEmployee = AsyncHandler(async (req, res) => {
+  const { employeeId } = req.params;
+  if (!employeeId) {
+    throw new ApiError(400, "Please provide the id of the item to delete");
+  }
+  // console.log("employeeId:", employeeId);
+
+  const deletionStatus = await Employee.deleteOne({ _id: employeeId });
+  if (deletionStatus.deletedCount === 0) {
+    throw new ApiError(400, "No such employeeId exists in the database!");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Employee deleted successfully!"));
 });

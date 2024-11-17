@@ -27,7 +27,7 @@ export type AdminModel = Model<IAdmin, {}, IAdminMethods>;
 export interface IEmployee extends Document<Types.ObjectId> {
   name: string;
   email: string;
-  phoneNumber: string;
+  phoneNumber: number;
   designation: string;
   gender: string;
   courses: Array<string>;
@@ -49,4 +49,15 @@ export interface LoginRequestBody {
   email?: string;
   password: string;
   isAdmin?: boolean;
+}
+
+export interface UpdateEmployeeRequest {
+  _id: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: number;
+  designation?: string;
+  gender?: 'male' | 'female' | 'other';
+  courses?: string[];
+  avatar?: string;
 }

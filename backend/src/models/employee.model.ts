@@ -17,7 +17,7 @@ const employeeSchema = new Schema<IEmployee, EmployeeModel, IEmployeeMethods>(
       lowercase: true,
     },
     phoneNumber: {
-      type: String,
+      type: Number,
       required: true,
     },
     designation: {
