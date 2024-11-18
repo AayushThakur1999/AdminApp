@@ -13,7 +13,7 @@ const Navbar = () => {
 
       toast.success(`${name} logged-out successfully`);
       localStorage.removeItem("adminName");
-      return navigate("/login");
+      return navigate("/");
     } catch (error) {
       console.error("Error:->", error);
       throw new Error("Something went wrong while trying to logout admin");
@@ -22,10 +22,10 @@ const Navbar = () => {
 
   return (
     <div>
-      <div className="navbar bg-base-100 shadow-md px-8">
+      <div className="navbar bg-base-100 shadow-md px-8 mb-4">
         <div className="flex-1">
-          <Link to="home" className="btn btn-outline">
-            My App
+          <Link to="home" className="text-primary text-xl font-bold">
+            Admin's App
           </Link>
         </div>
         <div className="flex-1">
@@ -33,6 +33,11 @@ const Navbar = () => {
             <li>
               <Link to="tableOfEmployees" className="btn btn-outline">
                 EmployeesList
+              </Link>
+            </li>
+            <li>
+              <Link to="register" className="btn btn-outline">
+                Create Employee
               </Link>
             </li>
             <li>

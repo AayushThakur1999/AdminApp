@@ -23,6 +23,13 @@ const EmployeesTable = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const [searchQuery, setSearchQuery] = useState(""); // New state for search
+  const filteredEmployeeData = employeeData.filter((employee) =>
+    `${employee.name.toLowerCase()} ${employee.email.toLowerCase()}`.includes(
+      searchQuery.toLowerCase()
+    )
+  );
+
   const revalidator = useRevalidator();
 
   const handleSaveEdit = async (
@@ -90,8 +97,10 @@ const EmployeesTable = () => {
 
     // Add the ID
     formData.append("_id", updatedEmployee._id);
+    // console.log("original employee:", originalEmployee);
+    // console.log("updatedFields:", updatedFields);
 
-    if (Object.keys(updatedFields).length === 1 && !file) {
+    if (Object.keys(updatedFields).length === 0 && !file) {
       toast.info("No changes detected.");
       setIsEditModalOpen(false);
       return;
@@ -109,7 +118,7 @@ const EmployeesTable = () => {
         }
       );
       revalidator.revalidate(); // Manually re-run the loader
-      
+
       toast.success(`Employee ${selectedEmployee.name} updated successfully!`);
       console.log("Updated employee:", response.data);
     } catch (error) {
@@ -147,8 +156,94 @@ const EmployeesTable = () => {
     }
   };
 
+  const [sortField, setSortField] = useState<"name" | "email" | "createdAt">(
+    "name"
+  );
+
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // const sortedEmployeeData = [...filteredEmployeeData]; // Filtered data for sorting
+  const sortedEmployeeData = [...filteredEmployeeData].sort((a, b) => {
+    const fieldA = a[sortField];
+    const fieldB = b[sortField];
+
+    if (typeof fieldA === "string" && typeof fieldB === "string") {
+      return sortOrder === "asc"
+        ? fieldA.localeCompare(fieldB)
+        : fieldB.localeCompare(fieldA);
+    }
+
+    if (sortField === "createdAt") {
+      const dateA = new Date(fieldA as string).getTime();
+      const dateB = new Date(fieldB as string).getTime();
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    }
+
+    return 0;
+  });
+
+  const handleSort = (field: "name" | "email" | "createdAt") => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Items per page
+
+  // Pagination logic
+  const indexOfLastEmployee = currentPage * itemsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
+  const currentEmployees = sortedEmployeeData.slice(
+    indexOfFirstEmployee,
+    indexOfLastEmployee
+  );
+
+  const totalPages = Math.ceil(sortedEmployeeData.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleFilteration = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    try {
+      const response = await axios.post(
+        "/employees/filterEmployees",
+        e.target.value
+      );
+      console.log("response of filteration:", response);
+    } catch (error) {
+      console.error(error);
+      throw new Error("Some error occurred while filtering data");
+    }
+  };
   return (
     <div className="p-12">
+      {/* Sorting Dropdown */}
+      <div className="mb-4 flex justify-between">
+        <input
+          type="text"
+          placeholder="Search by name or email"
+          className="input input-bordered w-full max-w-xs"
+          value={searchQuery}
+          onChange={handleFilteration}
+        />
+        {/* Sorting Dropdown */}
+        <select
+          className="select select-bordered"
+          onChange={(e) =>
+            handleSort(e.target.value as "name" | "email" | "createdAt")
+          }
+        >
+          <option value="name">Sort by Name</option>
+          <option value="email">Sort by Email</option>
+          <option value="createdAt">Sort by Date</option>
+        </select>
+      </div>
       <div className="rounded-lg border border-base-300">
         <table className="table table-zebra w-full">
           <thead className="bg-base-200">
@@ -168,7 +263,7 @@ const EmployeesTable = () => {
             </tr>
           </thead>
           <tbody>
-            {employeeData.map((employee) => {
+            {currentEmployees.map((employee) => {
               const {
                 _id,
                 gender,
@@ -238,6 +333,37 @@ const EmployeesTable = () => {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center mt-4">
+        <button
+          className="btn btn-sm"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Prev
+        </button>
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+          (pageNumber) => (
+            <button
+              key={pageNumber}
+              className={`btn btn-sm mx-1 ${
+                pageNumber === currentPage ? "btn-primary" : ""
+              }`}
+              onClick={() => handlePageChange(pageNumber)}
+            >
+              {pageNumber}
+            </button>
+          )
+        )}
+        <button
+          className="btn btn-sm"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Next
+        </button>
       </div>
 
       {selectedEmployee && (

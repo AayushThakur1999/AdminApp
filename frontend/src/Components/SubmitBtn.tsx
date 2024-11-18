@@ -17,7 +17,7 @@ const SubmitBtn = ({ text }: { text: string }) => {
       {isSubmitting ? (
         <>
           <span className="loading loading-ring loading-md"></span>
-          Logging-in...
+          Submitting...
         </>
       ) : (
         text || "Submit"

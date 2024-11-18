@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router-dom";
+import { Form } from "react-router-dom";
 import {
   FormCheckBoxGroup,
   FormInput,
@@ -64,12 +64,6 @@ const EmployeeForm = () => {
         <div className="mt-4">
           <SubmitBtn text="register" />
         </div>
-        <p className="text-center">
-          Already a member?
-          <Link to="/login" className="ml-2 link link-hover link-primary">
-            Login
-          </Link>
-        </p>
       </Form>
     </section>
   );
