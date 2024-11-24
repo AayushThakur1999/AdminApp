@@ -61,21 +61,38 @@ export const addEmployee = AsyncHandler(async (req, res) => {
     );
 });
 
-export const getAllEmployees = AsyncHandler(async (req, res) => {
-  const employeesData = await Employee.find({});
-  if (!employeesData) {
-    throw new ApiError(
-      500,
-      "Something went wrong while fetching employees data!"
+export const getEmployees = AsyncHandler(async (req, res) => {
+  const page =
+    req.query.page && typeof req.query.page === "string"
+      ? parseInt(req.query.page, 10)
+      : 1; // Default to page 1
+  const limit =
+    req.query.limit && typeof req.query.limit === "string"
+      ? parseInt(req.query.limit, 10)
+      : 10; // Default to 10 items per page
+  const skip = (page - 1) * limit; // Calculate the number of documents to skip
+  const employees = await Employee.find().skip(skip).limit(limit);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, employees, "Employees data fetched successfully!")
     );
-  }
+});
+
+export const getEmployeesCount = AsyncHandler(async (req, res) => {
+  const total = await Employee.countDocuments(); // Total number of documents
+  const limit =
+    req.query.limit && typeof req.query.limit === "string"
+      ? parseInt(req.query.limit, 10)
+      : 10; // Default to 10 items per page
+  const totalPages = Math.ceil(total / limit);
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        employeesData,
-        "Data of employees fetched successfully!"
+        totalPages,
+        "Total employee count fetched successfully!"
       )
     );
 });
@@ -162,10 +179,15 @@ export const deleteEmployee = AsyncHandler(async (req, res) => {
 
 export const filterEmployees = AsyncHandler(async (req, res) => {
   const { searchValue } = req.body;
+
   const filteredEmployees = await Employee.find({
-    $or: [{ name: searchValue }, { email: searchValue }],
+    $or: [
+      { name: { $regex: searchValue, $options: "i" } },
+      { email: { $regex: searchValue, $options: "i" } },
+    ],
   });
-  if (!filterEmployees) {
+
+  if (!filteredEmployees) {
     throw new ApiError(
       500,
       "Something went wrong while trying to fetch filtered employee data"
@@ -176,7 +198,7 @@ export const filterEmployees = AsyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        filterEmployees,
+        filteredEmployees,
         "Filteration of employees data successful!"
       )
     );

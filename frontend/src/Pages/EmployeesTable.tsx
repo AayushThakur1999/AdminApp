@@ -1,15 +1,53 @@
-import { useState } from "react";
-import { useLoaderData, useRevalidator } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
 import { EmployeeData } from "../Types";
 import { DeleteEmployeeModal, EditEmployeeModal } from "../Components";
 import axios, { AxiosError } from "axios";
 import { toast } from "react-toastify";
 
 const EmployeesTable = () => {
-  const employeeData = useLoaderData() as Array<EmployeeData>;
+  // list of employee data
+  const [employeeData, setEmployeeData] = useState<EmployeeData[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 10; // Items per page
+  const fetchEmployees = useCallback(
+    async (page = 1, limit = 10) => {
+      try {
+        const response = await axios.get(
+          `/employees/getEmployeesList?page=${page}&limit=${limit}`
+        );
+        // console.log("response data", response.data);
+
+        const employees = response.data.data;
+
+        setEmployeeData(employees); // Update state with current page's employees
+        if (totalPages === 0) {
+          const response = await axios.get("/employees/employeesCount");
+          console.log("response count", response.data);
+          const totalPages = response.data.data;
+          setTotalPages(totalPages); // Update total pages
+        }
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+        throw Error("Error while fetching employees");
+      }
+    },
+    [totalPages]
+  );
+
+  // added fetchEmployees to remove eslint warning
+  // Was able to add fetchEmployees in dependency array because we wrapped fetchEmployees in useCallback
+  // useCallback memoizes fetchEmployees function and only creates it again when totalPages value changes
+  // and not on every re-render
+  useEffect(() => {
+    fetchEmployees(currentPage, itemsPerPage);
+  }, [currentPage, fetchEmployees]);
+
+  // to select an employee to edit or delete
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(
     null
   );
+  // to open and close edit and delete modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -24,13 +62,6 @@ const EmployeesTable = () => {
   };
 
   const [searchQuery, setSearchQuery] = useState(""); // New state for search
-  const filteredEmployeeData = employeeData.filter((employee) =>
-    `${employee.name.toLowerCase()} ${employee.email.toLowerCase()}`.includes(
-      searchQuery.toLowerCase()
-    )
-  );
-
-  const revalidator = useRevalidator();
 
   const handleSaveEdit = async (
     updatedEmployee: EmployeeData,
@@ -117,7 +148,8 @@ const EmployeesTable = () => {
           },
         }
       );
-      revalidator.revalidate(); // Manually re-run the loader
+      /* revalidator.revalidate(); // Manually re-run the loader */
+      fetchEmployees(currentPage, itemsPerPage);
 
       toast.success(`Employee ${selectedEmployee.name} updated successfully!`);
       console.log("Updated employee:", response.data);
@@ -138,7 +170,8 @@ const EmployeesTable = () => {
           `/employees/deleteEmployee/${selectedEmployee._id}`
         );
         console.log(response);
-        revalidator.revalidate(); // Manually re-run the loader
+
+        fetchEmployees(currentPage, itemsPerPage);
         toast.success(
           `Employee ${selectedEmployee.name} deleted successfully!`
         );
@@ -163,7 +196,7 @@ const EmployeesTable = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // const sortedEmployeeData = [...filteredEmployeeData]; // Filtered data for sorting
-  const sortedEmployeeData = [...filteredEmployeeData].sort((a, b) => {
+  const sortedEmployeeData = [...employeeData].sort((a, b) => {
     const fieldA = a[sortField];
     const fieldB = b[sortField];
 
@@ -191,31 +224,27 @@ const EmployeesTable = () => {
     }
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Items per page
-
-  // Pagination logic
-  const indexOfLastEmployee = currentPage * itemsPerPage;
-  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
-  const currentEmployees = sortedEmployeeData.slice(
-    indexOfFirstEmployee,
-    indexOfLastEmployee
-  );
-
-  const totalPages = Math.ceil(sortedEmployeeData.length / itemsPerPage);
-
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+    fetchEmployees(pageNumber, itemsPerPage);
   };
 
-  const handleFilteration = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleFilteration = async () => {
     try {
       const response = await axios.post(
         "/employees/filterEmployees",
-        e.target.value
+        { searchValue: searchQuery },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
       console.log("response of filteration:", response);
+      const filteredEmployeeData = response.data.data;
+      if (filteredEmployeeData.length > 0) {
+        setEmployeeData(filteredEmployeeData);
+      }
     } catch (error) {
       console.error(error);
       throw new Error("Some error occurred while filtering data");
@@ -225,13 +254,23 @@ const EmployeesTable = () => {
     <div className="p-12">
       {/* Sorting Dropdown */}
       <div className="mb-4 flex justify-between">
-        <input
-          type="text"
-          placeholder="Search by name or email"
-          className="input input-bordered w-full max-w-xs"
-          value={searchQuery}
-          onChange={handleFilteration}
-        />
+        <div className="flex">
+          <input
+            type="text"
+            placeholder="Search by name or email"
+            className="input input-bordered w-full max-w-xs"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleFilteration();
+              }
+            }}
+          />
+          <button className="btn" type="button" onClick={handleFilteration}>
+            Search
+          </button>
+        </div>
         {/* Sorting Dropdown */}
         <select
           className="select select-bordered"
@@ -263,7 +302,7 @@ const EmployeesTable = () => {
             </tr>
           </thead>
           <tbody>
-            {currentEmployees.map((employee) => {
+            {sortedEmployeeData.map((employee) => {
               const {
                 _id,
                 gender,

@@ -7,7 +7,6 @@ import {
   Error,
 } from "./Pages";
 import { employeeFormAction, loginAction } from "./Utils/Actions";
-import { employeesTableLoader } from "./Utils/Loaders";
 import { Navbar } from "./Components";
 
 const router = createBrowserRouter([
@@ -28,7 +27,6 @@ const router = createBrowserRouter([
         path: "tableOfEmployees",
         element: <EmployeesTable />,
         errorElement: <Error />,
-        loader: employeesTableLoader,
       },
     ],
   },
