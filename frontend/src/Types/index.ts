@@ -38,3 +38,9 @@ export interface DeleteEmployeeModalProps {
   onConfirm: () => void;
   employeeName: string;
 }
+
+export interface LogoutAdminModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}

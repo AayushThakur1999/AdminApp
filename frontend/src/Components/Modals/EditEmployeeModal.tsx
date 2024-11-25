@@ -9,8 +9,14 @@ const EditEmployeeModal = ({
 }: EditEmployeeModalProps) => {
   const [formData, setFormData] = useState(employee);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // Used to preview which file is already there or which file (image) will be sent as the new avatar
   const [previewUrl, setPreviewUrl] = useState<string>(employee.avatar);
 
+  /* 
+     This useEffect is used so that the edit form which is auto-filled pre-fills the data 
+     of the selected employee instead of prefilling the form for every employee with the data 
+     of the first employee for whom we tried to edit data.
+  */
   useEffect(() => {
     setFormData(employee);
     setPreviewUrl(employee.avatar);
@@ -48,7 +54,7 @@ const EditEmployeeModal = ({
   return (
     <dialog className="modal modal-open">
       <div className="modal-box max-w-2xl">
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <form onSubmit={handleSubmit}>
           <h3 className="font-bold text-lg mb-4">Edit Employee Information</h3>
 
           <div className="grid grid-cols-1 gap-4">

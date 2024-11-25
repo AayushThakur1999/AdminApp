@@ -1,9 +1,13 @@
 import axios from "axios";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import LogoutAdminModal from "./Modals/LogoutAdminModal";
+import { useState } from "react";
 
 const Navbar = () => {
   const name = localStorage.getItem("adminName");
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   const navigate = useNavigate();
 
   const logoutAdmin = async () => {
@@ -46,7 +50,7 @@ const Navbar = () => {
             <li>
               <button
                 className="btn btn-error text-white"
-                onClick={logoutAdmin}
+                onClick={() => setIsLogoutModalOpen(true)}
               >
                 Logout
               </button>
@@ -55,6 +59,11 @@ const Navbar = () => {
         </div>
       </div>
       <Outlet />
+      <LogoutAdminModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={logoutAdmin}
+      />
     </div>
   );
 };
