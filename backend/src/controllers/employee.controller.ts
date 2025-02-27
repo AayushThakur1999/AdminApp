@@ -1,8 +1,8 @@
 import { isValidObjectId } from "mongoose";
-import { Employee } from "../models/employee.model";
-import { ApiError, ApiResponse, AsyncHandler } from "../utils";
-import { uploadOnCloudinary } from "../utils/Cloudinary";
-import { UpdateEmployeeRequest } from "../types";
+import { Employee } from "../models/employee.model.js";
+import { ApiError, ApiResponse, AsyncHandler } from "../utils/index.js";
+import { uploadOnCloudinary } from "../utils/Cloudinary.js";
+import { UpdateEmployeeRequest } from "../types/index.js";
 
 export const addEmployee = AsyncHandler(async (req, res) => {
   const { name, email, phoneNumber, designation, gender, courses } = req.body;
@@ -72,26 +72,27 @@ export const getEmployees = AsyncHandler(async (req, res) => {
       : 10; // Default to 10 items per page
   const skip = (page - 1) * limit; // Calculate the number of documents to skip
   const employees = await Employee.find().skip(skip).limit(limit);
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, employees, "Employees data fetched successfully!")
-    );
-});
+  const totalEmployees = await Employee.countDocuments(); // Total number of documents
 
-export const getEmployeesCount = AsyncHandler(async (req, res) => {
-  const total = await Employee.countDocuments(); // Total number of documents
-  const limit =
-    req.query.limit && typeof req.query.limit === "string"
-      ? parseInt(req.query.limit, 10)
-      : 10; // Default to 10 items per page
-  const totalPages = Math.ceil(total / limit);
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        totalPages,
+        { employees, totalEmployees },
+        "Employees data fetched successfully!"
+      )
+    );
+});
+
+export const getEmployeesCount = AsyncHandler(async (req, res) => {
+  const totalEmployees = await Employee.countDocuments(); // Total number of documents
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        totalEmployees,
         "Total employee count fetched successfully!"
       )
     );
@@ -178,28 +179,48 @@ export const deleteEmployee = AsyncHandler(async (req, res) => {
 });
 
 export const filterEmployees = AsyncHandler(async (req, res) => {
-  const { searchValue } = req.body;
+  // Parse pagination parameters with defaults
+  const page =
+    req.query.page && typeof req.query.page === "string"
+      ? parseInt(req.query.page, 10)
+      : 1; // Default to page 1
+  const limit =
+    req.query.limit && typeof req.query.limit === "string"
+      ? parseInt(req.query.limit, 10)
+      : 10; // Default to 10 items per page
+  const skip = (page - 1) * limit;
 
-  const filteredEmployees = await Employee.find({
-    $or: [
-      { name: { $regex: searchValue, $options: "i" } },
-      { email: { $regex: searchValue, $options: "i" } },
-    ],
-  });
+  // Build search query
+  const searchValue = req.query.searchValue;
+  const query = searchValue
+    ? {
+        $or: [
+          { name: { $regex: searchValue, $options: "i" } },
+          { email: { $regex: searchValue, $options: "i" } },
+        ],
+      }
+    : {};
 
-  if (!filteredEmployees) {
-    throw new ApiError(
-      500,
-      "Something went wrong while trying to fetch filtered employee data"
-    );
-  }
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        filteredEmployees,
-        "Filteration of employees data successful!"
-      )
-    );
+  // Execute both queries in parallel
+  const [employees, totalCount] = await Promise.all([
+    /* With the Mongoose lean() method, the documents are returned as plain objects. 
+    The only challenge here is that you are not able to use Mongoose features such 
+    as save(), virtuals, getters, etc., if you use lean() on a query. */
+    Employee.find(query).skip(skip).limit(limit).lean(),
+    Employee.countDocuments(query),
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        employees,
+        pagination: {
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      },
+      "Filtration based on search query successful"
+    )
+  );
 });

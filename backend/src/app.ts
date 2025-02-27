@@ -22,8 +22,8 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 // routes import
-import employeeRouter from "./routes/employee.routes";
-import adminRouter from "./routes/admin.routes";
+import employeeRouter from "./routes/employee.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 // routes declaration
 app.use("/api/v1/employees", employeeRouter);

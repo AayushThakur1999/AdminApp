@@ -43,6 +43,6 @@ export const loginAction = async ({ request }: { request: Request }) => {
     } else if (error instanceof Error) {
       throw new Error(error.message);
     }
-    throw new Error("Something went wrong while registering the user");
+    throw new Error("Something went wrong while logging-in the user");
   }
 };

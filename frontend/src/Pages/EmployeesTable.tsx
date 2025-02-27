@@ -10,38 +10,66 @@ const EmployeesTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const itemsPerPage = 10; // Items per page
-  const fetchEmployees = useCallback(
+  const [searchQuery, setSearchQuery] = useState("");
+  // New state: only update this when user confirms the search
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+
+  const fetchEmployees = useCallback(async (page = 1, limit = 10) => {
+    try {
+      const response = await axios.get(
+        `/employees/getEmployeesList?page=${page}&limit=${limit}`
+      );
+      // console.log("response data", response.data);
+
+      const employees = response.data.data.employees;
+      setEmployeeData(employees); // Update state with current page's employees
+
+      const totalEmployees = response.data.data.totalEmployees;
+      const totalSlides = Math.ceil(totalEmployees / limit);
+      setTotalPages(totalSlides); // Update total pages
+      console.log("Fetch employees ran successfully");
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      throw Error("Error while fetching employees");
+    }
+  }, []);
+
+  const handleFilteration = useCallback(
     async (page = 1, limit = 10) => {
       try {
         const response = await axios.get(
-          `/employees/getEmployeesList?page=${page}&limit=${limit}`
+          `/employees/filterEmployees?page=${page}&limit=${limit}&searchValue=${appliedSearchQuery}`
         );
-        // console.log("response data", response.data);
-
-        const employees = response.data.data;
-
-        setEmployeeData(employees); // Update state with current page's employees
-        if (totalPages === 0) {
-          const response = await axios.get("/employees/employeesCount");
-          console.log("response count", response.data);
-          const totalPages = response.data.data;
-          setTotalPages(totalPages); // Update total pages
+        console.log("response of filteration:", response);
+        const filteredEmployeeData = response.data.data.employees;
+        const totalSlides = response.data.data.pagination.totalPages;
+        if (filteredEmployeeData.length > 0) {
+          setEmployeeData(filteredEmployeeData);
+          setTotalPages(totalSlides);
         }
       } catch (error) {
-        console.error("Error fetching employees:", error);
-        throw Error("Error while fetching employees");
+        console.error(error);
+        throw new Error("Some error occurred while filtering data");
       }
     },
-    [totalPages]
+    [appliedSearchQuery]
   );
 
-  // added fetchEmployees to remove eslint warning
-  // Was able to add fetchEmployees in dependency array because we wrapped fetchEmployees in useCallback
-  // useCallback memoizes fetchEmployees function and only creates it again when totalPages value changes
-  // and not on every re-render
+  // Single effect that triggers on page change or when a search is applied
   useEffect(() => {
-    fetchEmployees(currentPage, itemsPerPage);
-  }, [currentPage, fetchEmployees]);
+    if (appliedSearchQuery) {
+      handleFilteration(currentPage, itemsPerPage);
+    } else {
+      fetchEmployees(currentPage, itemsPerPage);
+    }
+  }, [appliedSearchQuery, currentPage, handleFilteration, fetchEmployees]);
+
+  // Handler for search action
+  const handleSearch = () => {
+    // Optionally, reset to the first page when a new search is applied
+    setCurrentPage(1);
+    setAppliedSearchQuery(searchQuery);
+  };
 
   // to select an employee to edit or delete
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(
@@ -60,8 +88,6 @@ const EmployeesTable = () => {
     setSelectedEmployee(employee);
     setIsDeleteModalOpen(true);
   };
-
-  const [searchQuery, setSearchQuery] = useState(""); // New state for search
 
   const handleSaveEdit = async (
     updatedEmployee: EmployeeData,
@@ -226,30 +252,9 @@ const EmployeesTable = () => {
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    fetchEmployees(pageNumber, itemsPerPage);
+    // fetchEmployees(pageNumber, itemsPerPage);
   };
 
-  const handleFilteration = async () => {
-    try {
-      const response = await axios.post(
-        "/employees/filterEmployees",
-        { searchValue: searchQuery },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log("response of filteration:", response);
-      const filteredEmployeeData = response.data.data;
-      if (filteredEmployeeData.length > 0) {
-        setEmployeeData(filteredEmployeeData);
-      }
-    } catch (error) {
-      console.error(error);
-      throw new Error("Some error occurred while filtering data");
-    }
-  };
   return (
     <div className="p-12">
       {/* Sorting Dropdown */}
@@ -263,11 +268,11 @@ const EmployeesTable = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                handleFilteration();
+                handleSearch();
               }
             }}
           />
-          <button className="btn" type="button" onClick={handleFilteration}>
+          <button className="btn" type="button" onClick={handleSearch}>
             Search
           </button>
         </div>

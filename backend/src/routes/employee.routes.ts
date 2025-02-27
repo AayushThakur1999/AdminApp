@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 import {
   addEmployee,
   deleteEmployee,
@@ -7,8 +7,8 @@ import {
   getEmployees,
   getEmployeesCount,
   updateEmployeeDetails,
-} from "../controllers/employee.controller";
-import { upload } from "../middlewares/multer.middleware";
+} from "../controllers/employee.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
@@ -20,6 +20,6 @@ router
   .route("/updateEmployeeDetails")
   .patch(upload.single("avatar"), updateEmployeeDetails);
 router.route("/deleteEmployee/:employeeId").delete(deleteEmployee);
-router.route("/filterEmployees").post(filterEmployees);
+router.route("/filterEmployees").get(filterEmployees);
 
 export default router;

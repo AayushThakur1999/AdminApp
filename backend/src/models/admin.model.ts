@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { AdminModel, IAdmin, IAdminMethods } from "../types";
+import { AdminModel, IAdmin, IAdminMethods } from "../types/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 

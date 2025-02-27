@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { LoginRequestBody, TokensJwtPayload } from "../types";
+import { LoginRequestBody, TokensJwtPayload } from "../types/index.js";
 import {
   ApiError,
   ApiResponse,
   AsyncHandler,
   generateAccessAndRefreshTokens,
-} from "../utils";
-import { cookieOptions } from "../constants";
-import { Admin } from "../models/admin.model";
+} from "../utils/index.js";
+import { cookieOptions } from "../constants.js";
+import { Admin } from "../models/admin.model.js";
 import jwt from "jsonwebtoken";
 
 export const registerAdmin = AsyncHandler(async (req, res) => {

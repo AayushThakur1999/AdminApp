@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import { Admin } from "../models/admin.model";
-import { ApiError } from "./ApiError";
+import { Admin } from "../models/admin.model.js";
+import { ApiError } from "./ApiError.js";
 
 export const generateAccessAndRefreshTokens = async (
   userId: Types.ObjectId
